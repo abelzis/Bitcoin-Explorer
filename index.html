@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Bitcoin Explorer</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8" />
+
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+  </head>
+
+  <body>
+    <div id="transaction-form">
+      <form id="get-transaction-info" action="/submittx" method="GET">
+        <input
+          type="text"
+          id="tx"
+          name="txfield"
+          placeholder="Enter transaction here..."
+        /><br />
+        <input type="submit" id="submit-button" /><br />
+      </form>
+    </div>
+  </body>
+</html>
