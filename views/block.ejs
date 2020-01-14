@@ -14,15 +14,19 @@
   </style>
 
   <body>
-    <div id="tx-results">
-      <h1>Transaction Info</h1>
-      <span>Tx ID: <%= txid %><br /></span>
+    <div id="block-results">
+      <h1>Block Info</h1>
       <span>Hash: <%= hash %><br /></span>
-      <span>Version: <%= version %><br /></span>
+      <span>Confirmations: <%= confirmations %><br /></span>
       <span>Size: <%= size %><br /></span>
-      <span>Vsize: <%= vsize %><br /></span>
       <span>Weight: <%= weight %><br /></span>
-      <span>Total output: <%= vout %><br /></span>
+      <span>Version: <%= version %><br /></span>
+      <span>Merkleroot: <%= merkleroot %><br /></span>
+      <span>Time: <%= time %><br /></span>
+      <span>Nonce: <%= nonce %><br /></span>
+      <span>Difficulty: <%= difficulty %><br /></span>
+      <span>Previous Block Hash: <%= previousBlockHash %><br /></span>
+      <span>Next Block Hash: <%= nextBlockHash %><br /></span>
     </div>
     <h1>Find block info here</h1>
     <div id="block-form">

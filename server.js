@@ -25,7 +25,32 @@ const headers = {
 
 // html
 router.get("/", async (req, res) => {
-  await res.sendFile(path.join(__dirname + "/index.html"));
+  //await res.sendFile(path.join(__dirname + "/index.html"));
+
+  // REQUEST BLOCKCHAIN INFO
+  var urlGetBlockchainInfo = "http://localhost:4444/api/getblockchaininfo/";
+  var optionsGetBlockchainInfo = {
+    headers: headers, //{ "content-type": "application/json" },
+    url: urlGetBlockchainInfo
+  };
+  callbackGetBlockchainInfo = (error, response, body) => {
+    if (error) {
+      return console.log(error);
+    }
+    body = JSON.parse(body).body;
+    console.log("BLOCKCHAIN INFO");
+    console.log(body);
+
+    res.render("index", {
+      blocks: body.blocks,
+      headers: body.headers,
+      bestHash: body.bestblockhash,
+      difficulty: body.difficulty,
+      totalSize: Math.floor(body.size_on_disk / 1000000000)
+    });
+  };
+
+  request(optionsGetBlockchainInfo, callbackGetBlockchainInfo);
 });
 
 app.get("/submittx", async function(req, res) {
@@ -82,6 +107,40 @@ app.get("/submittx", async function(req, res) {
   };
 
   await request(optionsDecodeTx, callbackDecodeTx);
+});
+
+app.get("/submitblock", async function(req, res) {
+  var urlGetBlock =
+    "http://localhost:4444/api/getblock/" + req.query.blockfield;
+  var optionsGetBlock = {
+    headers: headers, //{ "content-type": "application/json" },
+    url: urlGetBlock
+  };
+  callbackGetBlock = (error, response, body) => {
+    if (error) {
+      return console.log(error);
+    }
+    var body = JSON.parse(body).body;
+    console.log("------------------------------");
+    console.log(body);
+    console.log("------------------------------");
+
+    res.render("block", {
+      hash: body.hash,
+      confirmations: body.confirmations,
+      size: body.size,
+      weight: body.weight,
+      version: body.version,
+      merkleroot: body.merkleroot,
+      time: body.time,
+      nonce: body.nonce,
+      difficulty: body.difficulty,
+      previousBlockHash: body.previousblockhash,
+      nextBlockHash: body.nextblockhash
+    });
+  };
+
+  request(optionsGetBlock, callbackGetBlock);
 });
 
 app.use("/", router);

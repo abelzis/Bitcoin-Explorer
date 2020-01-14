@@ -5,24 +5,22 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta charset="UTF-8" />
-  </head>
 
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+  </head>
   <style>
     input[type="text"] {
       width: 600px;
     }
   </style>
-
   <body>
-    <div id="tx-results">
-      <h1>Transaction Info</h1>
-      <span>Tx ID: <%= txid %><br /></span>
-      <span>Hash: <%= hash %><br /></span>
-      <span>Version: <%= version %><br /></span>
-      <span>Size: <%= size %><br /></span>
-      <span>Vsize: <%= vsize %><br /></span>
-      <span>Weight: <%= weight %><br /></span>
-      <span>Total output: <%= vout %><br /></span>
+    <div id="blockchain-info">
+      <h1>Blockchain Info</h1>
+      <div>Blocks: <%= blocks %><br /></div>
+      <div>Headers: <%= headers %><br /></div>
+      <div>Best Block Hash: <%= bestHash %><br /></div>
+      <div>Difficulty: <%= difficulty %><br /></div>
+      <div>Total size: <%= totalSize %>GB<br /></div>
     </div>
     <h1>Find block info here</h1>
     <div id="block-form">
