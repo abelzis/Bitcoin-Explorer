@@ -14,6 +14,7 @@
   </style>
 
   <body>
+    <a href="/">Home</a>
     <div id="block-results">
       <h1>Block Info</h1>
       <span>Hash: <%= hash %><br /></span>
@@ -25,9 +26,35 @@
       <span>Time: <%= time %><br /></span>
       <span>Nonce: <%= nonce %><br /></span>
       <span>Difficulty: <%= difficulty %><br /></span>
-      <span>Previous Block Hash: <%= previousBlockHash %><br /></span>
-      <span>Next Block Hash: <%= nextBlockHash %><br /></span>
+      <span
+        >Previous Block Hash:
+        <a
+          href="http://localhost:4444/submitblock?blockfield=<%=
+        previousBlockHash %>"
+          ><%= previousBlockHash %></a
+        ><br
+      /></span>
+      <span
+        >Next Block Hash:
+        <a
+          href="http://localhost:4444/submitblock?blockfield=<%=
+      nextBlockHash %>"
+          ><%= nextBlockHash %></a
+        ><br
+      /></span>
     </div>
+    <h3>Transactions</h3>
+    <!-- Put transactions here -->
+    <div
+      id="transaction-list"
+      style="overflow:hidden scroll; height: 100px; width: 700px;"
+    >
+      <% for(var i = 0; i < txList.length; i++) {%> <%=i%>:
+      <a href="http://localhost:4444/submittx?txfield=<%=txList[i]%>">
+        <%= txList[i] %></a
+      ><br /><%} %>
+    </div>
+    <!--  -->
     <h1>Find block info here</h1>
     <div id="block-form">
       <form id="get-block-info" action="/submitblock" method="GET">
@@ -47,10 +74,19 @@
           type="text"
           id="tx"
           name="txfield"
-          placeholder="Enter transaction here..."
+          placeholder="Enter transaction hash here..."
         /><br />
         <input type="submit" id="transaction-submit-button" /><br />
       </form>
     </div>
+    <script>
+      // function loadTransactions() {
+      //   var txlist = JSON.parse(JSON.stringify("<%= txList %>"));
+      //   //txlist = JSON.parse(txList);
+      //   console.log(txlist);
+      // }
+
+      // loadTransactions();
+    </script>
   </body>
 </html>

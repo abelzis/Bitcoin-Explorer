@@ -33,15 +33,18 @@ router.get("/", async (req, res) => {
     headers: headers, //{ "content-type": "application/json" },
     url: urlGetBlockchainInfo
   };
-  callbackGetBlockchainInfo = (error, response, body) => {
+  callbackGetBlockchainInfo = async (error, response, body) => {
     if (error) {
       return console.log(error);
     }
-    body = JSON.parse(body).body;
-    console.log("BLOCKCHAIN INFO");
-    console.log(body);
 
-    res.render("index", {
+    try {
+      body = await JSON.parse(body).body;
+    } catch (e) {
+      console.log(e);
+    }
+
+    await res.render("index", {
       blocks: body.blocks,
       headers: body.headers,
       bestHash: body.bestblockhash,
@@ -50,51 +53,58 @@ router.get("/", async (req, res) => {
     });
   };
 
-  request(optionsGetBlockchainInfo, callbackGetBlockchainInfo);
+  await request(optionsGetBlockchainInfo, callbackGetBlockchainInfo);
 });
 
+// Submit transaction request
 app.get("/submittx", async function(req, res) {
   var urlGetRawTx =
     "http://localhost:4444/api/getrawtransaction/" + req.query.txfield;
   var rawTransaction;
   var optionsGetRawTx = {
-    headers: headers, //{ "content-type": "application/json" },
+    headers: { "content-type": "application/json" },
     url: urlGetRawTx
   };
-  callbackGetRawTx = (error, response, body) => {
+  callbackGetRawTx = async (error, response, body) => {
     if (error) {
       return console.log(error);
     }
-    rawTransaction = JSON.parse(body).body;
+    rawTransaction = await JSON.parse(body).body;
+    //console.log("RAW TRANSACTION = ", rawTransaction);
   };
 
-  request(optionsGetRawTx, callbackGetRawTx);
+  await request(optionsGetRawTx, callbackGetRawTx);
 
   await delay(4000);
   var urlDecodeTx =
     "http://localhost:4444/api/decoderawtransaction/" + rawTransaction;
 
   var optionsDecodeTx = {
-    //headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json" },
     url: urlDecodeTx
   };
-  callbackDecodeTx = (error, response, body) => {
+  callbackDecodeTx = async (error, response, body) => {
     if (error) {
       return console.log(error);
     }
     //res.sendFile(path.join(__dirname + "/submittx.html"));
     // body = JSON.stringify(body);
-    body = JSON.parse(body).body;
-    console.log("-------------------------");
-    console.log(body.vout);
-    console.log("-------------------------");
+    try {
+      console.log("BODY: ", body);
+      body = await JSON.parse(body).body;
+      //body = JSON.parse(body);
+      console.log("LATE    \n", body, "\n LATE");
+    } catch (e) {
+      console.log(e);
+    }
 
     totalVout = 0;
     for (var i = 0; i < body.vout.length; i++) {
       totalVout += body.vout[i].value;
     }
 
-    res.render("transaction", {
+    // render transaction template
+    await res.render("transaction", {
       txid: body.txid,
       hash: body.hash,
       version: body.version,
@@ -109,23 +119,43 @@ app.get("/submittx", async function(req, res) {
   await request(optionsDecodeTx, callbackDecodeTx);
 });
 
+// Submit block request
 app.get("/submitblock", async function(req, res) {
   var urlGetBlock =
     "http://localhost:4444/api/getblock/" + req.query.blockfield;
   var optionsGetBlock = {
-    headers: headers, //{ "content-type": "application/json" },
+    headers: { "content-type": "application/json" },
     url: urlGetBlock
   };
-  callbackGetBlock = (error, response, body) => {
+  callbackGetBlock = async (error, response, body) => {
     if (error) {
       return console.log(error);
     }
-    var body = JSON.parse(body).body;
-    console.log("------------------------------");
-    console.log(body);
-    console.log("------------------------------");
 
-    res.render("block", {
+    // var err;
+    // while (!err) {
+    //   try {
+    //     var body = await JSON.parse(body).body;
+    //     console.log("BODY:\n", body);
+    //     break;
+    //   } catch (e) {
+    //     console.log(e);
+    //     error = e;
+    //   }
+    //   await delay(300);
+    // }
+
+    try {
+      body = await JSON.parse(body).body;
+      console.log("BODY:\n", body);
+    } catch (e) {
+      console.log(e);
+      // await delay(2000);
+      // return await request(optionsGetBlock, callbackGetBlock);
+    }
+
+    // render block template
+    await res.render("block", {
       hash: body.hash,
       confirmations: body.confirmations,
       size: body.size,
@@ -136,11 +166,12 @@ app.get("/submitblock", async function(req, res) {
       nonce: body.nonce,
       difficulty: body.difficulty,
       previousBlockHash: body.previousblockhash,
-      nextBlockHash: body.nextblockhash
+      nextBlockHash: body.nextblockhash,
+      txList: body.tx
     });
   };
 
-  request(optionsGetBlock, callbackGetBlock);
+  await request(optionsGetBlock, callbackGetBlock);
 });
 
 app.use("/", router);

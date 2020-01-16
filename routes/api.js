@@ -11,200 +11,279 @@ var ssh = new simple_ssh({
   pass: "pass"
 });
 
-var dataOut;
-var bigData = "";
+// var dataOut = "";
 
-async function sshCommand(command) {
+var delayTime = 3000;
+
+function isParsable(str) {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
+}
+
+var dataOut = "";
+
+// Generalized command function
+async function sshCommandPipe(command) {
+  let bigData = "";
+  //console.log("FUNCTION HAS BEEN CALLED!");
   //await
   ssh
+    .on("ready", async () => {
+      console.log(command, " ready.\n");
+    })
     .exec("bitcoin-cli " + command, {
       // 'out' is a pipeline already
       out: async function(stdout) {
-        // if (IsJsonString(stdout)) {
-        //   //JSON.stringify(stdout);
-        //   data = JSON.parse(stdout);
-        //   //data = stdout;
-        //   dataOut = data;
-        //   console.log(data);
-        // } else {
-        //   dataOut = stdout;
-        //   console.log(stdout);
-        // }
-        bigData += stdout;
+        bigData += await stdout;
       },
       err: async function(stderr) {
         console.log(stderr);
       }
     })
-    .on("end", () => {
+    .on("end", async () => {
       try {
-        bigData = JSON.parse(bigData);
-        console.log(bigData);
-        dataOut = bigData;
-        bigData = "";
+        //if (isParsable(bigData)) {
+        dataOut = await JSON.parse(bigData);
+        //console.log("TRUE: ", dataOut);
+        // } else {
+        //   //console.log("BIGDATA: ", bigData);
+        //   dataOut = await JSON.parse(await JSON.stringify(bigData));
+        //   //console.log("FALSE: ", dataOut);
+        // }
       } catch (err) {
         console.log(err);
       }
     });
 }
 
-// var bigBody = "",
-//   bigData = "";
+// Generalized command function
+async function sshCommand(command) {
+  //await
+  ssh
+    .on("ready", async () => {
+      console.log(command, " ready.\n");
+    })
+    .exec("bitcoin-cli " + command, {
+      out: async function(stdout) {
+        try {
+          console.log("\texec started...");
+          if (isParsable(stdout)) {
+            dataOut = await JSON.parse(stdout);
+            console.log("TRUE: ", dataOut);
+          } else {
+            //console.log("BIGDATA: ", bigData);
+            dataOut = await JSON.parse(await JSON.stringify(stdout));
+            console.log("FALSE: ", dataOut);
+          }
+        } catch (err) {
+          console.log(err);
+        }
+      },
+      err: async function(stderr) {
+        console.log(stderr);
+      }
+    });
+}
 
-// ssh.on("data", chunk => {
-//   bigBody += chunk;
-//   console.log("CHUNK");
-//   console.log(chunk);
-// });
+async function sshStart(delayT) {
+  if (delayT > 30000) delayT = 30000;
 
-// ssh.on("end", () => {
-//   try {
-//     //bigData = JSON.parse(bigBody);
-//     //console.log(data);
-//   } catch (err) {
-//     console.log(err);
-//   }
-// });
-
-// async function sshCommand(command) {
-//   var data;
-//   //await
-//   ssh
-//     .exec("bitcoin-cli " + command, {
-//       out: async function(stdout) {
-//         console.log(stdout);
-//         // if (IsJsonString(stdout)) {
-//         //   //JSON.stringify(stdout);
-//         //   data = JSON.parse(stdout);
-//         //   //data = stdout;
-//         //   dataOut = data;
-//         //   console.log(data);
-//         // } else {
-//         //   dataOut = stdout;
-//         //   console.log(stdout);
-//         // }
-//         //console.log(data);
-//         bigBody = "";
-//       },
-//       err: async function(stderr) {
-//         console.log(stderr);
-//       }
-//     })
-//     .on("", chunk => {
-//       bigBody += chunk;
-//       console.log("BIIIIG BODDDDYYYY");
-//       console.log(chunk);
-//       console.log("BIIIIG BODDDDYYYY");
-//       // console.log("CHUNK");
-//       // console.log(chunk);
-//     })
-//     .on("end", () => {
-//       try {
-//         //bigData = JSON.parse(JSON.stringify(bigBody));
-//         // bigBody = "[" + bigBody + "]";
-//         // bigBody = JSON.parse(bigBody);
-//       } catch (err) {
-//         console.log(err);
-//       }
-//     });
-// }
-
-router.get("/getblockchaininfo", async (req, res) => {
-  sshCommand("getblockchaininfo");
-  await ssh.start();
-  await delay(2000);
-  res.json({
-    success: true,
-    body: await dataOut
+  ssh.start({
+    success: async () => {
+      console.log("\nCommands successfully started.\n");
+      return;
+    },
+    fail: async err => {
+      console.log(err);
+      console.log("\nRestarting in...");
+      await delay(delayT);
+      await sshStart(delayT * 2);
+    }
   });
-  ssh.reset();
+}
+
+// API requests
+router.get("/getblockchaininfo", async (req, res) => {
+  await ssh.reset(err => {
+    if (err) throw err;
+  });
+  if (ssh.count() < 2) {
+    await sshCommand("getblockchaininfo");
+    sshStart(1000);
+    await delay(1.5 * delayTime);
+    res.json({
+      success: true,
+      body: await dataOut
+    });
+    await ssh.reset(err => {
+      if (err) throw err;
+    });
+  } else {
+    res.json({
+      success: false
+    });
+  }
+  await ssh.reset(err => {
+    if (err) throw err;
+  });
 });
 
 router.get("/getbestblockhash", async (req, res) => {
-  sshCommand("getbestblockhash");
-  await ssh.start();
-  await delay(2000);
-  res.json({
-    success: true,
-    body: await dataOut
+  await ssh.reset(err => {
+    if (err) throw err;
   });
-  ssh.reset();
+  if (ssh.count() < 2) {
+    await sshCommand("getbestblockhash");
+    sshStart(1000);
+    await delay(delayTime);
+    res.json({
+      success: true,
+      body: await dataOut
+    });
+    await ssh.reset(err => {
+      if (err) throw err;
+    });
+  } else {
+    res.json({
+      success: false
+    });
+  }
+  await ssh.reset(err => {
+    if (err) throw err;
+  });
 });
 
 router.get("/getblockcount", async (req, res) => {
-  sshCommand("getblockcount");
-  await ssh.start();
-  await delay(2000);
-  res.json({
-    success: true,
-    body: await dataOut
+  await ssh.reset(err => {
+    if (err) throw err;
   });
-  ssh.reset();
+  if (ssh.count() < 2) {
+    await sshCommand("getblockcount");
+    sshStart(1000);
+    await delay(delayTime);
+    res.json({
+      success: true,
+      body: await dataOut
+    });
+    await ssh.reset(err => {
+      if (err) throw err;
+    });
+  } else {
+    res.json({
+      success: false
+    });
+  }
+  await ssh.reset(err => {
+    if (err) throw err;
+  });
 });
 
 router.get("/getdifficulty", async (req, res) => {
-  sshCommand("getdifficulty");
-  await ssh.start();
-  await delay(2000);
-  res.json({
-    success: true,
-    body: await dataOut
+  await ssh.reset(err => {
+    if (err) throw err;
   });
-  ssh.reset();
+  if (ssh.count() < 2) {
+    await sshCommand("getdifficulty");
+    sshStart(1000);
+    await delay(delayTime);
+    res.json({
+      success: true,
+      body: await dataOut
+    });
+    await ssh.reset(err => {
+      if (err) throw err;
+    });
+  } else {
+    res.json({
+      success: false
+    });
+  }
+  await ssh.reset(err => {
+    if (err) throw err;
+  });
 });
 
 router.get("/getblock/:hash", async (req, res) => {
-  sshCommand("getblock" + " " + req.params.hash);
-  await ssh.start();
-  await delay(2000);
-  res.json({
-    success: true,
-    body: await dataOut
+  await ssh.reset(err => {
+    if (err) throw err;
   });
-  ssh.reset();
+  if (ssh.count() < 2) {
+    await sshCommandPipe("getblock" + " " + req.params.hash);
+    sshStart(1000);
+    await delay(1.7 * delayTime);
+    await console.log("\nBLOCK INFO:\n", dataOut);
+    res.json({
+      success: true,
+      body: await dataOut
+    });
+    await ssh.reset(err => {
+      if (err) throw err;
+    });
+  } else {
+    res.json({
+      success: false
+    });
+  }
+  await ssh.reset(err => {
+    if (err) throw err;
+  });
 });
 
 router.get("/getrawtransaction/:txid", async (req, res) => {
-  sshCommand("getrawtransaction" + " " + req.params.txid);
-  await ssh.start();
-  await delay(2000);
-  res.json({
-    success: true,
-    body: await dataOut
+  await ssh.reset(err => {
+    if (err) throw err;
   });
-  ssh.reset();
+  if (ssh.count() < 2) {
+    await sshCommand("getrawtransaction" + " " + req.params.txid);
+    sshStart(1000);
+    await delay(delayTime);
+    res.json({
+      success: true,
+      body: await dataOut
+    });
+    await ssh.reset(err => {
+      if (err) throw err;
+    });
+  } else {
+    res.json({
+      success: false
+    });
+  }
+  await ssh.reset(err => {
+    if (err) throw err;
+  });
 });
 
 router.get("/decoderawtransaction/:rawtxid", async (req, res) => {
-  sshCommand("decoderawtransaction" + " " + req.params.rawtxid);
-  await ssh.start();
-  await delay(2000);
-  res.json({
-    success: true,
-    body: await dataOut
+  await ssh.reset(err => {
+    if (err) throw err;
   });
-  ssh.reset();
+  if (ssh.count() < 2) {
+    await sshCommand("decoderawtransaction" + " " + req.params.rawtxid);
+    sshStart(1000);
+    await delay(delayTime);
+    await console.log("\nBLOCK INFO:\n", dataOut);
+    res.json({
+      success: true,
+      body: await dataOut
+    });
+    await ssh.reset(err => {
+      if (err) throw err;
+    });
+  } else {
+    res.json({
+      success: false
+    });
+  }
+  await ssh.reset(err => {
+    if (err) throw err;
+  });
 });
 
 router.get("/test", (req, res) => res.json({ msg: "backend works" }));
-
-// router.get("/getblockcount", (req, res) => {
-//   var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getblockcount","params":[]}`;
-//   var options = {
-//     //url: `http://${USER}:${PASS}@127.0.0.1:8332/`,
-//     url: `http://${USER}:${PASS}@127.0.0.1:8332/`,
-//     method: "POST",
-//     headers: headers,
-//     body: dataString
-//   };
-
-//   callback = (error, response, body) => {
-//     if (!error && response.statusCode == 200) {
-//       const data = JSON.parse(body);
-//       res.send(data);
-//     }
-//   };
-//   request(options, callback);
-// });
 
 module.exports = router;

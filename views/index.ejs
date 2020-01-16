@@ -18,7 +18,14 @@
       <h1>Blockchain Info</h1>
       <div>Blocks: <%= blocks %><br /></div>
       <div>Headers: <%= headers %><br /></div>
-      <div>Best Block Hash: <%= bestHash %><br /></div>
+      <div>
+        Best Block Hash:
+        <a
+          href="http://localhost:4444/submitblock?blockfield=<%=
+        bestHash %>"
+          ><%= bestHash %></a
+        ><br />
+      </div>
       <div>Difficulty: <%= difficulty %><br /></div>
       <div>Total size: <%= totalSize %>GB<br /></div>
     </div>
@@ -41,7 +48,7 @@
           type="text"
           id="tx"
           name="txfield"
-          placeholder="Enter transaction here..."
+          placeholder="Enter transaction hash here..."
         /><br />
         <input type="submit" id="transaction-submit-button" /><br />
       </form>

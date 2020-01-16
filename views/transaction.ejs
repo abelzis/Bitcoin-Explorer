@@ -14,6 +14,7 @@
   </style>
 
   <body>
+    <a href="/">Home</a>
     <div id="tx-results">
       <h1>Transaction Info</h1>
       <span>Tx ID: <%= txid %><br /></span>
@@ -22,7 +23,7 @@
       <span>Size: <%= size %><br /></span>
       <span>Vsize: <%= vsize %><br /></span>
       <span>Weight: <%= weight %><br /></span>
-      <span>Total output: <%= vout %><br /></span>
+      <span>Total output: <%= vout %>BTC<br /></span>
     </div>
     <h1>Find block info here</h1>
     <div id="block-form">
@@ -43,7 +44,7 @@
           type="text"
           id="tx"
           name="txfield"
-          placeholder="Enter transaction here..."
+          placeholder="Enter transaction hash here..."
         /><br />
         <input type="submit" id="transaction-submit-button" /><br />
       </form>
